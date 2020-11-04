@@ -1,4 +1,6 @@
+# frozen-string-literal: true
 module Skalp
+
 module ChunkyPNG
   
   # A PNG datastream consists of multiple chunks. This module, and the classes

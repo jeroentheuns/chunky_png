@@ -1,8 +1,7 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe ChunkyPNG do
-  
   it "should have a VERSION constant" do
-    ChunkyPNG.const_defined?('VERSION').should be_true
+    expect(ChunkyPNG.const_defined?("VERSION")).to be_truthy
   end
 end
