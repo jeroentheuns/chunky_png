@@ -169,11 +169,12 @@ module ChunkyPNG
     def dimension
       ChunkyPNG::Dimension.new(width, height)
     end
-    
+
     # @return [Array<ChunkyPNG::Point>] The list of points interpreted from the input array.
     def self.multiple_from_array(source)
       return [] if source.empty?
-      if source.first.kind_of?(Numeric) || source.first =~ /^\d+$/
+      first = source.first
+      if first.kind_of?(Numeric) || (!(first.is_a?(Skalp::ChunkyPNG::Point) || first.is_a?(Skalp::SkalpHatch::Point2D)) && first =~ /^\d+$/)
         raise ArgumentError, "The points array is expected to have an even number of items!" if source.length % 2 != 0
 
         points = []
