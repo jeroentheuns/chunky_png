@@ -1,8 +1,9 @@
-require 'RMagick'
+# frozen-string-literal: true
+
+require "rmagick"
 
 module Skalp
   module ChunkyPNG
-
     # Methods for importing and exporting RMagick image objects.
     #
     # By default, this module is disabled because of the dependency on RMagick.
@@ -21,14 +22,13 @@ module Skalp
     #    updated_canvas = ChunkyPNG::RMagick.import(image)
     #
     module RMagick
-
       extend self
 
       # Imports an RMagick image as Canvas object.
       # @param [Magick::Image] image The image to import
       # @return [ChunkyPNG::Canvas] The canvas, constructed from the RMagick image.
       def import(image)
-        pixels = image.export_pixels_to_str(0, 0, image.columns, image.rows, 'RGBA')
+      pixels = image.export_pixels_to_str(0, 0, image.columns, image.rows, "RGBA")
         ChunkyPNG::Canvas.from_rgba_stream(image.columns, image.rows, pixels)
       end
 

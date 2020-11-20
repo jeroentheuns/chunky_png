@@ -1,7 +1,6 @@
 module Skalp
-module ChunkyPNG
+ module ChunkyPNG
   class Canvas
-
     # Methods for decoding and encoding Adam7 interlacing.
     #
     # Adam7 interlacing extracts 7 pass images out of a single image, that can be encoded to a
@@ -9,12 +8,15 @@ module ChunkyPNG
     # ChunkyPNG canvas and is used to extract the pass images from the original image, or to
     # reconstruct an original image from separate pass images.
     module Adam7Interlacing
-
       # Returns an array with the x-shift, x-offset, y-shift and y-offset for the requested pass.
       # @param [Integer] pass The pass number, should be in 0..6.
       def adam7_multiplier_offset(pass)
-        [3 - (pass >> 1), (pass & 1 == 0) ? 0 : 8 >> ((pass + 1) >> 1),
-         pass == 0 ? 3 : 3 - ((pass - 1) >> 1), (pass == 0 || pass & 1 == 1) ? 0 : 8 >> (pass >> 1)]
+        [
+          3 - (pass >> 1),
+          pass & 1 == 0 ? 0 : 8 >> ((pass + 1) >> 1),
+          pass == 0 ? 3 : 3 - ((pass - 1) >> 1),
+          pass == 0 || pass & 1 == 1 ? 0 : 8 >> (pass >> 1),
+        ]
       end
 
       # Returns the pixel dimensions of the requested pass.
@@ -23,8 +25,10 @@ module ChunkyPNG
       # @param [Integer] original_height The height of the original image.
       def adam7_pass_size(pass, original_width, original_height)
         x_shift, x_offset, y_shift, y_offset = adam7_multiplier_offset(pass)
-        [ (original_width  - x_offset + (1 << x_shift) - 1) >> x_shift,
-          (original_height - y_offset + (1 << y_shift) - 1) >> y_shift]
+        [
+          (original_width  - x_offset + (1 << x_shift) - 1) >> x_shift,
+          (original_height - y_offset + (1 << y_shift) - 1) >> y_shift,
+        ]
       end
 
       # Returns an array of the dimension of all the pass images.

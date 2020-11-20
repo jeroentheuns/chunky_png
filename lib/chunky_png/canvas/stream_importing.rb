@@ -1,10 +1,10 @@
+# frozen-string-literal: true
+
 module Skalp
 module ChunkyPNG
   class Canvas
-
     # Methods to quickly load a canvas from a stream, encoded in RGB, RGBA, BGR or ABGR format.
     module StreamImporting
-
       # Creates a canvas by reading pixels from an RGB formatted stream with a
       # provided with and height.
       #
@@ -19,9 +19,9 @@ module ChunkyPNG
       def from_rgb_stream(width, height, stream)
         string = stream.respond_to?(:read) ? stream.read(3 * width * height) : stream.to_s[0, 3 * width * height]
         string << ChunkyPNG::EXTRA_BYTE # Add a fourth byte to the last RGB triple.
-        unpacker = 'NX' * (width * height)
+        unpacker = "NX" * (width * height)
         pixels = string.unpack(unpacker).map { |color| color | 0x000000ff }
-        self.new(width, height, pixels)
+        new(width, height, pixels)
       end
 
       # Creates a canvas by reading pixels from an RGBA formatted stream with a
@@ -37,7 +37,7 @@ module ChunkyPNG
       # @return [ChunkyPNG::Canvas] The newly constructed canvas instance.
       def from_rgba_stream(width, height, stream)
         string = stream.respond_to?(:read) ? stream.read(4 * width * height) : stream.to_s[0, 4 * width * height]
-        self.new(width, height, string.unpack("N*"))
+        new(width, height, string.unpack("N*"))
       end
 
       # Creates a canvas by reading pixels from an BGR formatted stream with a
@@ -54,8 +54,8 @@ module ChunkyPNG
       def from_bgr_stream(width, height, stream)
         string = ChunkyPNG::EXTRA_BYTE.dup # Add a first byte to the first BGR triple.
         string << (stream.respond_to?(:read) ? stream.read(3 * width * height) : stream.to_s[0, 3 * width * height])
-        pixels = string.unpack("@1" << ('XV' * (width * height))).map { |color| color | 0x000000ff }
-        self.new(width, height, pixels)
+        pixels = string.unpack("@1#{"XV" * (width * height)}").map { |color| color | 0x000000ff }
+        new(width, height, pixels)
       end
 
       # Creates a canvas by reading pixels from an ARGB formatted stream with a
@@ -71,7 +71,7 @@ module ChunkyPNG
       # @return [ChunkyPNG::Canvas] The newly constructed canvas instance.
       def from_abgr_stream(width, height, stream)
         string = stream.respond_to?(:read) ? stream.read(4 * width * height) : stream.to_s[0, 4 * width * height]
-        self.new(width, height, string.unpack("V*"))
+        new(width, height, string.unpack("V*"))
       end
     end
   end

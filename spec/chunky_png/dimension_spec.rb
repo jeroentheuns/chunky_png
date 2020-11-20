@@ -1,48 +1,48 @@
-require 'spec_helper'
+require "spec_helper"
 
 describe ChunkyPNG::Dimension do
   subject { ChunkyPNG::Dimension.new(2, 3) }
-  
+
   it { should respond_to(:width) }
   it { should respond_to(:height) }
-  
-  describe '#area' do
+
+  describe "#area" do
     it "should calculate the area correctly" do
-      subject.area.should == 6
+      expect(subject.area).to eql 6
     end
   end
 end
 
-describe 'ChunkyPNG.Dimension' do
+describe "ChunkyPNG.Dimension" do
   subject { ChunkyPNG::Dimension.new(1, 2) }
-  
+
   it "should create a dimension from a 2-item array" do
-    ChunkyPNG::Dimension([1, 2]).should     == subject
-    ChunkyPNG::Dimension(['1', '2']).should == subject
+    expect(ChunkyPNG::Dimension([1, 2])).to     eql subject
+    expect(ChunkyPNG::Dimension(["1", "2"])).to eql subject
   end
-  
-  it "should create a dimension from a hash with x and y keys" do
-    ChunkyPNG::Dimension(:width => 1, :height => 2).should       == subject
-    ChunkyPNG::Dimension('width' => '1', 'height' => '2').should == subject
+
+  it "should create a dimension from a hash with width and height keys" do
+    expect(ChunkyPNG::Dimension(width: 1, height: 2)).to eql subject
+    expect(ChunkyPNG::Dimension("width" => "1", "height" => "2")).to eql subject
   end
-  
+
   it "should create a dimension from a point-like string" do
     [
-      ChunkyPNG::Dimension('1,2'),
-      ChunkyPNG::Dimension('1   2'),
-      ChunkyPNG::Dimension('(1 , 2)'),
+      ChunkyPNG::Dimension("1,2"),
+      ChunkyPNG::Dimension("1   2"),
+      ChunkyPNG::Dimension("(1 , 2)"),
       ChunkyPNG::Dimension("{1x2}"),
       ChunkyPNG::Dimension("[1\t2}"),
     ].all? { |point| point == subject }
   end
-  
+
   it "should create a dimension from an object that responds to width and height" do
     mock_object = Struct.new(:width, :height).new(1, 2)
-    ChunkyPNG::Dimension(mock_object).should == subject
+    expect(ChunkyPNG::Dimension(mock_object)).to eql subject
   end
-  
+
   it "should raise an exception if the input is not understood" do
-    lambda { ChunkyPNG::Dimension(Object.new) }.should raise_error(ArgumentError)
-    lambda { ChunkyPNG::Dimension(1, 2, 3) }.should raise_error(ArgumentError)
+    expect { ChunkyPNG::Dimension(Object.new) }.to raise_error(ArgumentError)
+    expect { ChunkyPNG::Dimension(1, 2, 3) }.to raise_error(ArgumentError)
   end
 end

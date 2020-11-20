@@ -1,13 +1,14 @@
+# frozen-string-literal: true
+
 # Basic requirements from standard library
-require 'set'
-require 'zlib'
-require 'stringio'
-require 'enumerator'
+require "set"
+require "zlib"
+require "stringio"
 
 # ChunkyPNG - the pure ruby library to access PNG files.
 #
 # The ChunkyPNG module defines some constants that are used in the
-# PNG specification, specifies some exception classes, and serves as 
+# PNG specification, specifies some exception classes, and serves as
 # a namespace for all the other modules and classes in this library.
 #
 # {ChunkyPNG::Image}::      class to represent PNG images, including metadata.
@@ -23,7 +24,6 @@ require 'enumerator'
 # @author Willem van Bergen
 module Skalp
   module ChunkyPNG
-
     ###################################################
     # PNG international standard defined constants
     ###################################################
@@ -57,6 +57,16 @@ module Skalp
     # method is used (Zlib/Deflate)
     # @private
     COMPRESSION_DEFAULT   = 0
+
+  # Indicates that the PNG chunk content is not compressed
+  # flag used in iTXt chunk
+  # @private
+  UNCOMPRESSED_CONTENT  = 0
+
+  # Indicates that the PNG chunk content is compressed
+  # flag used in iTXt chunk
+  # @private
+  COMPRESSED_CONTENT    = 1
 
     # Indicates that the image does not use interlacing.
     # @private
@@ -114,36 +124,32 @@ module Skalp
     class CRCMismatch < ChunkyPNG::Exception
     end
 
+  # Exception that is raised if an tTXt chunk does not contain valid UTF-8 data.
+  class InvalidUTF8 < ChunkyPNG::Exception
+  end
+
     # Exception that is raised if an expectation fails.
     class ExpectationFailed < ChunkyPNG::Exception
     end
 
-    # Exception that is raised if an expectation fails.
+  # Exception that when provided coordinates are out of bounds for the canvas
     class OutOfBounds < ChunkyPNG::ExpectationFailed
     end
 
-    def self.force_binary(str)
-      str.respond_to?(:force_encoding) ? str.force_encoding('BINARY') : str
+  # Exception that is raised when requesting the DPI of a PNG that doesn't
+  # specify the units of its physical pixel dimensions.
+  class UnitsUnknown < ChunkyPNG::Exception
     end
-
-    # Empty byte array. This basically is an empty string, but with the encoding
-    # set correctly to ASCII-8BIT (binary) in Ruby 1.9.
-    # @return [String] An empty string, with encoding set to binary in Ruby 1.9
-    # @private
-    EMPTY_BYTEARRAY = force_binary("").freeze
 
     # Null-byte, with the encoding set correctly to ASCII-8BIT (binary) in Ruby 1.9.
     # @return [String] A binary string, consisting of one NULL-byte.
     # @private
-    EXTRA_BYTE = force_binary("\0").freeze
+  EXTRA_BYTE = "\0".b
   end
 
   filepath = File.dirname(__FILE__) + '/'
 
   require filepath + "chunky_png/version"
-
-  # Ruby 1.8 / 1.9 compatibility
-  require filepath + 'chunky_png/compatibility'
 
   # PNG file structure
   require filepath + 'chunky_png/datastream'

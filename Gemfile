@@ -1,10 +1,22 @@
-source 'https://rubygems.org'
+# frozen-string-literal: true
+
+source "https://rubygems.org"
 gemspec
 
 platforms :jruby do
-  gem 'jruby-openssl'
+  gem "jruby-openssl"
 end
 
 platform :rbx do
-  gem 'rubysl'
+  gem "rubysl"
+end
+
+group :jekyll do
+  gem "jekyll", "~> 3.3"
+  gem "kramdown-parser-gfm"
+end
+
+group :jekyll_plugins do
+  gem "jekyll-commonmark"
+  gem "jekyll-theme-cayman"
 end

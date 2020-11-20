@@ -1,18 +1,18 @@
+# frozen-string-literal: true
+
 module Skalp
 module ChunkyPNG
-
   # The Datastream class represents a PNG formatted datastream. It supports
   # both reading from and writing to strings, streams and files.
   #
-  # A PNG datastream begins with the PNG signature, and than contains multiple
+  # A PNG datastream begins with the PNG signature, and then contains multiple
   # chunks, starting with a header (IHDR) chunk and finishing with an end
   # (IEND) chunk.
   #
   # @see ChunkyPNG::Chunk
   class Datastream
-
     # The signature that each PNG file or stream should begin with.
-    SIGNATURE = ChunkyPNG.force_binary([137, 80, 78, 71, 13, 10, 26, 10].pack('C8'))
+    SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10].pack("C8").force_encoding(::Encoding::BINARY).freeze
 
     # The header chunk of this datastream.
     # @return [ChunkyPNG::Chunk::Header]
@@ -29,6 +29,10 @@ module ChunkyPNG
     # The chunk containing the transparency information of the palette.
     # @return [ChunkyPNG::Chunk::Transparency]
     attr_accessor :transparency_chunk
+
+    # The chunk containing the physical dimensions of the PNG's pixels.
+    # @return [ChunkyPNG::Chunk::Physical]
+    attr_accessor :physical_chunk
 
     # The chunks that together compose the images pixel data.
     # @return [Array<ChunkyPNG::Chunk::ImageData>]
@@ -49,22 +53,21 @@ module ChunkyPNG
     ##############################################################################
 
     class << self
-
       # Reads a PNG datastream from a string.
       # @param [String] str The PNG encoded string to load from.
       # @return [ChunkyPNG::Datastream] The loaded datastream instance.
       def from_blob(str)
-        from_io(StringIO.new(str))
+        from_io(StringIO.new(str, "rb"))
       end
 
-      alias :from_string :from_blob
+      alias from_string from_blob
 
       # Reads a PNG datastream from a file.
       # @param [String] filename The path of the file to load from.
       # @return [ChunkyPNG::Datastream] The loaded datastream instance.
       def from_file(filename)
         ds = nil
-        File.open(filename, 'rb') { |f| ds = from_io(f) }
+        File.open(filename, "rb") { |f| ds = from_io(f) }
         ds
       end
 
@@ -72,21 +75,23 @@ module ChunkyPNG
       # @param [IO] io The stream to read from.
       # @return [ChunkyPNG::Datastream] The loaded datastream instance.
       def from_io(io)
+        io.set_encoding(::Encoding::BINARY)
         verify_signature!(io)
 
-        ds = self.new
-        until io.eof?
+        ds = new
+        while ds.end_chunk.nil?
           chunk = ChunkyPNG::Chunk.read(io)
           case chunk
-            when ChunkyPNG::Chunk::Header;       ds.header_chunk = chunk
-            when ChunkyPNG::Chunk::Palette;      ds.palette_chunk = chunk
-            when ChunkyPNG::Chunk::Transparency; ds.transparency_chunk = chunk
-            when ChunkyPNG::Chunk::ImageData;    ds.data_chunks << chunk
-            when ChunkyPNG::Chunk::End;          ds.end_chunk = chunk
+            when ChunkyPNG::Chunk::Header       then ds.header_chunk = chunk
+            when ChunkyPNG::Chunk::Palette      then ds.palette_chunk = chunk
+            when ChunkyPNG::Chunk::Transparency then ds.transparency_chunk = chunk
+            when ChunkyPNG::Chunk::ImageData    then ds.data_chunks << chunk
+            when ChunkyPNG::Chunk::Physical     then ds.physical_chunk = chunk
+            when ChunkyPNG::Chunk::End          then ds.end_chunk = chunk
             else ds.other_chunks << chunk
           end
         end
-        return ds
+        ds
       end
 
       # Verifies that the current stream is a PNG datastream by checking its signature.
@@ -99,7 +104,7 @@ module ChunkyPNG
       #    the beginning of the stream.
       def verify_signature!(io)
         signature = io.read(ChunkyPNG::Datastream::SIGNATURE.length)
-        unless ChunkyPNG.force_binary(signature) == ChunkyPNG::Datastream::SIGNATURE
+        unless signature == ChunkyPNG::Datastream::SIGNATURE
           raise ChunkyPNG::SignatureMismatch, "PNG signature not found, found #{signature.inspect} instead of #{ChunkyPNG::Datastream::SIGNATURE.inspect}!"
         end
       end
@@ -122,7 +127,8 @@ module ChunkyPNG
       other_chunks.each { |chunk| yield(chunk) }
       yield(palette_chunk)      if palette_chunk
       yield(transparency_chunk) if transparency_chunk
-      data_chunks.each  { |chunk| yield(chunk) }
+      yield(physical_chunk)     if physical_chunk
+      data_chunks.each { |chunk| yield(chunk) }
       yield(end_chunk)
     end
 
@@ -132,17 +138,17 @@ module ChunkyPNG
     def chunks
       enum_for(:each_chunk)
     end
-    
+
     # Returns all the textual metadata key/value pairs as hash.
     # @return [Hash] A hash containing metadata fields and their values.
     def metadata
       metadata = {}
-      other_chunks.select do |chunk|
-        metadata[chunk.keyword] = chunk.value if chunk.respond_to?(:keyword)
+      other_chunks.each do |chunk|
+        metadata[chunk.keyword] = chunk.value if chunk.respond_to?(:keyword) && chunk.respond_to?(:value)
       end
       metadata
     end
-   
+
     # Returns the uncompressed image data, combined from all the IDAT chunks
     # @return [String] The uncompressed image data for this datastream
     def imagedata
@@ -152,12 +158,6 @@ module ChunkyPNG
     ##################################################################################
     # WRITING DATASTREAMS
     ##################################################################################
-
-    # Returns an empty stream using binary encoding that can be used as stream to encode to.
-    # @return [String] An empty, binary string.
-    def self.empty_bytearray
-      ChunkyPNG::EMPTY_BYTEARRAY.dup
-    end
 
     # Writes the datastream to the given output stream.
     # @param [IO] io The output stream to write to.
@@ -169,19 +169,20 @@ module ChunkyPNG
     # Saves this datastream as a PNG file.
     # @param [String] filename The filename to use.
     def save(filename)
-      File.open(filename, 'wb') { |f| write(f) }
+      File.open(filename, "wb") { |f| write(f) }
     end
 
     # Encodes this datastream into a string.
     # @return [String] The encoded PNG datastream.
     def to_blob
       str = StringIO.new
+      str.set_encoding("ASCII-8BIT")
       write(str)
-      return str.string
+      str.string
     end
 
-    alias :to_string :to_blob
-    alias :to_s :to_blob
+    alias to_string to_blob
+    alias to_s to_blob
   end
 end
 end
