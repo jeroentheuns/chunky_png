@@ -168,7 +168,7 @@ module ChunkyPNG
       # Returns an empty string, because this chunk should always be empty.
       # @return [""] An empty string.
       def content
-        ChunkyPNG::Datastream.empty_bytearray
+        "".b
       end
     end
 
